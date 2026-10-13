@@ -1,5 +1,5 @@
 {==================================================================
-                   SCALPEL AMBUSH V8.9-OPTIMIZED
+                   SCALPEL AMBUSH V8.9-OPTIMIZED R1
 ==================================================================}
 
 {==================== 一、参数与市场效率 (ER) ====================}
@@ -97,11 +97,11 @@ SZ_OSC   := W_ER * SZ_OSC_F + (1 - W_ER) * SZ_OSC_S;
 
 SZ_STD   := MAX(STD(SZ_OSC, SZ_STD_N), 0.015);
 SZ_RAW   := SZ_OSC / SZ_STD;
-SZ       := IF(SZ_RAW >= 0 OR SZ_RAW < 0, SZ_RAW, 0);
+SZ_NORM       := IF(SZ_RAW >= 0 OR SZ_RAW < 0, SZ_RAW, 0);
 
-SZ_SC    := (SZ + 1.9) / 2.7;
+SZ_SC    := (SZ_NORM + 1.9) / 2.7;
 
-SZ_ACC_S := SZ > REF(SZ, 1) AND SZ > -0.85;
+SZ_ACC_S := SZ_NORM > REF(SZ_NORM, 1) AND SZ_NORM > -0.85;
 SZ_VST   := SZ_SC > 1.15;
 SZ_STR   := SZ_SC > 0.72;
 SCALPEL  := V_SHRK AND SZ_ACC_S;
@@ -113,14 +113,14 @@ RL_DIR   := IF(ABS(IN_DIR) < 0.01, IF(C > PREV_C, 0.6, IF(C < PREV_C, -0.6, 0)),
 DARK_FLOW:= EMA(RL_DIR * (0.65 + 0.35 * EX_CAP), 3);
 
 { --- 双线超前导数与 TMC 镜像对齐 --- }
-D1_RAW      := SZ - REF(SZ, 1);
+D1_RAW      := SZ_NORM - REF(SZ_NORM, 1);
 D2_ACC      := D1_RAW - REF(D1_RAW, 1);
 LEAD_RAW    := (D1_RAW + D2_ACC * 0.618) * 2.95;
 LEAD_FACTOR := LEAD_RAW * 0.85 + EMA(LEAD_RAW, 1) * 0.15;
-SZ_MA_VAL   := EMA(SZ + LEAD_FACTOR * 1.25, 2);
+SZ_MA_VAL   := EMA(SZ_NORM + LEAD_FACTOR * 1.25, 2);
 
-TMC_BASE_F  := EMA(SZ, 7);
-TMC_BASE_S  := EMA(SZ, 25);
+TMC_BASE_F  := EMA(SZ_NORM, 7);
+TMC_BASE_S  := EMA(SZ_NORM, 25);
 TMC_BASE    := W_ER * TMC_BASE_F + (1 - W_ER) * TMC_BASE_S;
 TMC_D1      := TMC_BASE - REF(TMC_BASE, 1);
 TMC_D2      := TMC_D1 - REF(TMC_D1, 1);
@@ -133,10 +133,10 @@ SZ_CROSS_DN := CROSS(TMC_OBSERVE, SZ_MA_VAL);
 EXPL_TH_SUB   := 1.85 - W_ER * 0.60;
 IS_EXPL_SUB   := V_PRED > V_MA_SAFE * EXPL_TH_SUB;
 CF_TREND_OK   := SZ_MA_VAL > TMC_OBSERVE;
-SZ_STD20      := STD(SZ, 20);
-SZ_MA20       := MA(SZ, 20);
-QUIET_SCORE   := COUNT((SZ > 0 AND NOT(IS_EXPL_SUB)) OR (SZ_STD20 * 2 / (ABS(SZ_MA20) + 0.01) < 0.22), 3);
-CF_FLY_SIGNAL := CF_TREND_OK AND REF(QUIET_SCORE >= 2, 1) AND SZ > 0 AND IS_EXPL_SUB AND DARK_FLOW > -0.02;
+SZ_STD20      := STD(SZ_NORM, 20);
+SZ_MA20       := MA(SZ_NORM, 20);
+QUIET_SCORE   := COUNT((SZ_NORM > 0 AND NOT(IS_EXPL_SUB)) OR (SZ_STD20 * 2 / (ABS(SZ_MA20) + 0.01) < 0.22), 3);
+CF_FLY_SIGNAL := CF_TREND_OK AND REF(QUIET_SCORE >= 2, 1) AND SZ_NORM > 0 AND IS_EXPL_SUB AND DARK_FLOW > -0.02;
 
 {==================== 六、VCP衰竭 & 突破信号对齐 ====================}
 LLV60 := LLV(L, 60);
@@ -180,9 +180,13 @@ SIG_STR   := FINAL_BUY AND (TREND_ST OR SZ_VST OR BREAK_POWER);
 SIG_NOR   := FINAL_BUY AND NOT(SIG_STR);
 
 TRY_BUY  := TRY_EXHAUSTION AND NOT(FINAL_BUY) AND MULTI_RESO_OK AND OPEN_SAFE AND WARM_OK;
-BUY_SIG  := SIG_STR OR SIG_NOR OR TRY_BUY;
+
+{ 将买入候选与正式入场事件分离；HOLD_MAX周期内不重复重置模拟持仓起点 }
+BUY_CAND := SIG_STR OR SIG_NOR OR TRY_BUY;
+BUY_SIG  := BUY_CAND AND REF(COUNT(BUY_CAND, HOLD_MAX), 1) = 0;
 
 {==================== 七、棘轮止损与四象判定 ====================}
+{ 注意：此处为公式内部模拟持仓；不代表账户真实成交或实际仓位。}
 HAS_BUY     := SUM(BUY_SIG, 0) > 0;
 B_CNT       := IF(HAS_BUY, BARSLAST(BUY_SIG), 9999);
 HAS_TRIGGER := HAS_BUY;
@@ -198,6 +202,7 @@ DYN_X := IF(MAX_GAIN > STRONG_GAIN_PCT OR SZ_SC > 1.30, TIGHT_STOP_MULT,
 TIGHT_LOCK := DYN_X <= TIGHT_STOP_MULT;
 
 RAW_TRAIL    := HH_C_HOLD - DYN_X * ATR_VAL;
+{ 止损线只取当前模拟持仓区间内的最高候选止损值，避免止损线回落 }
 STOP_RATCHET := HHV(RAW_TRAIL, HOLD_LEN);
 
 CRASH_EX := C < STOP_RATCHET OR CROSS(MA20, C) OR C < MA20 * IF(ADX_STR, 0.925, 0.945) OR (B_CNT > HOLD_MAX);
@@ -254,7 +259,7 @@ DRAWICON(SIG_NOR AND NOT(PREV_HOLD), L - P_GAP, 7);
 DRAWICON(HOLD_ST AND SCALPEL, L - P_GAP, 25);
 DRAWTEXT(TRY_BUY AND NOT(PREV_HOLD), L - P_GAP * 1.5, '埋'), COLOR00FFFF;
 
-MA20_LINE: MA20, COLOR0000FF, LINETHICK1;
+MA20_LINE: MA20, COLOR0000FF, LINETHICK2;
 MA60_LINE: SYS_MA60, COLOR00FF00, LINETHICK1;
 D_STOP   : D_STOP_VAL, COLOR00CCFF, LINETHICK1;
 
