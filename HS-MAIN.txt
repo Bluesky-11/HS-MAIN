@@ -1,39 +1,39 @@
 {==================================================================
-                        SCALPEL AMBUSH
+                          SCALPEL AMBUSH
 ==================================================================}
 
 {==================== 一、参数与市场效率 (ER) ====================}
-N_TRK           := 15;         {突破观察周期}
-ATR_X           := 1.06;       {普通趋势ATR止损}
-ATR_XS          := 1.48;       {强趋势ATR止损}
-V_DYS           := 15;         {量能均线周期}
-SHR_R           := 0.85;       {缩量阈值}
-BB_F            := 2.0;        {布林倍数}
-HOLD_MAX        := 240;        {最长持仓周期}
-M_PER           := 20;         {生命线周期}
-EPS             := 0.0001;     {统一除零保护极小量}
-MA20_TOL        := 0.985;      {MA20容忍系数(突破/衰竭)}
-CORE_TOL        := 0.982;      {核心条件MA20容忍系数}
-STRONG_GAIN_PCT := 20;         {MAX_GAIN强势阈值}
-TIGHT_STOP_MULT := 0.68;       {紧止损ATR系数}
-SZ_SC_MID       := 0.90;       {SZ_SC中位阈值}
-SZ_STD_N        := 80;         {暗流标准化窗口}
-WARM_N          := 80;         {预热K线数}
-TRD_MIN         := 240;        {日内交易分钟数}
-VP_MIN          := 30;         {量能外推最小已开盘分钟数}
-K_WICK_W        := 0.1;          {影线渲染宽度}
-K_BODY_W        := 2;          {实体渲染宽度}
+N_TRK         := 15;         {突破观察周期}
+ATR_X         := 1.06;       {普通趋势ATR止损}
+ATR_XS        := 1.48;       {强趋势ATR止损}
+V_DYS         := 15;         {量能均线周期}
+SHR_R         := 0.85;       {缩量阈值}
+BB_F          := 2.0;        {布林倍数}
+HOLD_MAX      := 240;        {最长持仓周期}
+M_PER         := 20;         {生命线周期}
+EPS           := 0.0001;     {统一除零保护极小量}
+MA20_TOL      := 0.985;      {MA20容忍系数(突破/衰竭)}
+CORE_TOL      := 0.982;      {核心条件MA20容忍系数}
+STRONG_GAIN_PCT := 20;       {MAX_GAIN强势阈值}
+TIGHT_STOP_MULT := 0.68;     {紧止损ATR系数}
+SZ_SC_MID     := 0.90;       {SZ_SC中位阈值}
+SZ_STD_N      := 80;         {暗流标准化窗口}
+WARM_N        := 80;         {预热K线数}
+TRD_MIN       := 240;        {日内交易分钟数}
+VP_MIN        := 30;         {量能外推最小已开盘分钟数}
+K_WICK_W      := 0.1;        {影线渲染宽度}
+K_BODY_W      := 2;          {实体渲染宽度}
 
-PREV_C   := REF(C, 1);
-TR_BASE  := MAX(MAX(H - L, ABS(H - PREV_C)), ABS(L - PREV_C));
+PREV_C    := REF(C, 1);
+TR_BASE   := MAX(MAX(H - L, ABS(H - PREV_C)), ABS(L - PREV_C));
 
-NET_CHG  := ABS(C - REF(C, 10));
-PATH_SUM := SUM(ABS(C - PREV_C), 10);
-ER       := NET_CHG / (PATH_SUM + EPS);
-W_ER     := EMA(ER, 5);
+NET_CHG   := ABS(C - REF(C, 10));
+PATH_SUM  := SUM(ABS(C - PREV_C), 10);
+ER        := NET_CHG / (PATH_SUM + EPS);
+W_ER      := EMA(ER, 5);
 
-WARM_OK  := BARSCOUNT(C) > WARM_N;
-IS_INTRA := PERIOD < 5;         {请按所用软件的PERIOD编码核对}
+WARM_OK   := BARSCOUNT(C) > WARM_N;
+IS_INTRA  := PERIOD < 5;         {请按所用软件的PERIOD编码核对}
 
 {==================== 二、自适应 ATR & 趋势生命线 ====================}
 ATR_FAST := MA(TR_BASE, 12);
@@ -49,8 +49,7 @@ TREND_ST := SLP_20 > 0.00035;
 STK_OK   := C > MA20 * MA20_TOL;
 SLF_TR_UP := SYS_MA60 >= REF(SYS_MA60, 1) OR C > SYS_MA60;
 
-{==================== 三、跨周期趋势计算 (已修正语法) ====================}
-{ 修正说明：#DAY 跨周期后缀必须紧跟在计算表达式后，再由 REF 套用历史偏移 }
+{==================== 三、跨周期趋势计算 ====================}
 D_C       := C#DAY;
 D_M20     := EMA(C, 20)#DAY;
 D_M60     := EMA(C, 60)#DAY;
@@ -87,7 +86,7 @@ V_MA_SAFE := MAX(V_MA, V_PRED * 0.15);
 V_SHRK    := V_PRED < V_MA_SAFE * SHR_R;
 V_MA5     := MA(V_PRED, 5);
 
-{==================== 五、暗流引擎 & 资金动量 ====================}
+{==================== 五、暗流引擎 & 资金动量 (优化开盘即算) ====================}
 VOL_RATIO := V_PRED / (V_MA_SAFE + EPS);
 SZ_DIR    := IF(C >= PREV_C, VOL_RATIO, -VOL_RATIO * 0.85);
 
@@ -95,11 +94,16 @@ SZ_OSC_F := EMA(SZ_DIR, 5) - EMA(SZ_DIR, 15);
 SZ_OSC_S := EMA(SZ_DIR, 15) - EMA(SZ_DIR, 45);
 SZ_OSC   := W_ER * SZ_OSC_F + (1 - W_ER) * SZ_OSC_S;
 
-SZ_STD   := MAX(STD(SZ_OSC, SZ_STD_N), 0.015);
-SZ_RAW   := SZ_OSC / SZ_STD;
-SZ       := IF(SZ_RAW >= 0 OR SZ_RAW < 0, SZ_RAW, 0);
+{ 动态自适应标准化窗口，确保开盘初期即有有效分母 }
+SZ_STD_RAW := IF(BARSCOUNT(C) >= 80, STD(SZ_OSC, 80),
+              IF(BARSCOUNT(C) >= 40, STD(SZ_OSC, 40),
+              IF(BARSCOUNT(C) >= 20, STD(SZ_OSC, 20), STD(SZ_OSC, MAX(BARSCOUNT(C), 3)))));
+SZ_STD     := MAX(IF(SZ_STD_RAW >= 0 OR SZ_STD_RAW < 0, SZ_STD_RAW, 0.05), 0.015);
 
-SZ_SC    := (SZ + 1.9) / 2.7;
+SZ_RAW     := SZ_OSC / SZ_STD;
+SZ         := IF(SZ_RAW >= 0 OR SZ_RAW < 0, SZ_RAW, 0);
+
+SZ_SC      := (SZ + 1.9) / 2.7;
 
 SZ_ACC_S := SZ > REF(SZ, 1) AND SZ > -0.85;
 SZ_VST   := SZ_SC > 1.15;
@@ -218,7 +222,6 @@ PREV_HOLD := REF(HOLD_ST, 1);
 SPRING_UP := IS_SPRING AND C >= MA20;
 SPRING_DN := IS_SPRING AND C < MA20;
 
-{ 观望区(少阴·秋) 阴阳 K 线独立区分 }
 AUTUMN_UP := IS_AUTUMN AND C >= O;
 AUTUMN_DN := IS_AUTUMN AND C < O;
 
@@ -261,7 +264,7 @@ D_STOP   : D_STOP_VAL, COLOR00CCFF, DOTLINE;
 { 4. 面板 (全透明无遮挡版) }
 IS_LAST := ISLASTBAR;
 
-{ 四象气候提示 (纯文字高亮渲染，不使用任何遮挡底衬) }
+{ 四象气候提示 }
 DRAWTEXT_FIX(IS_LAST, 0.01, 0.89, 0, '四象气候:'), COLORFFFFFF;
 DRAWTEXT_FIX(IS_LAST AND IS_SPRING, 0.060, 0.89, 0, '少阳·春 (主升生发)'), COLOR00FFFF;
 DRAWTEXT_FIX(IS_LAST AND IS_SUMMER, 0.060, 0.89, 0, '老阳·夏 (趋势锁盈)'), COLOR00AAFF;
