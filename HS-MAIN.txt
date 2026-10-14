@@ -42,21 +42,21 @@ ATR_SLOW := MA(TR_BASE, 40);
 ATR_VAL  := W_ER * ATR_FAST + (1 - W_ER) * (0.6 * ATR_MID + 0.4 * ATR_SLOW);
 
 MA10     := EMA(C, M_PER);
-SYS_MA55 := EMA(C, 55);       {原MA60改为MA55}
+SYS_MA50 := EMA(C, 50);        {MA55改为MA50}
 
 SLP_10   := (MA10 - REF(MA10, 5)) / 5 / (MA10 + EPS);
 TREND_ST := SLP_10 > 0.00035;
 STK_OK   := C > MA10 * MA10_TOL;
-SLF_TR_UP := SYS_MA55 >= REF(SYS_MA55, 1) OR C > SYS_MA55;
+SLF_TR_UP := SYS_MA50 >= REF(SYS_MA50, 1) OR C > SYS_MA50;
 
 {==================== 三、跨周期趋势计算 ====================}
 D_C       := C#DAY;
 D_M10     := EMA(C, 10)#DAY;
-D_M55     := EMA(C, 55)#DAY;    {原D_M60改为D_M55}
+D_M50     := EMA(C, 50)#DAY;     {D_M55改为D_M50}
 
 TREND_DAY := IF(PERIOD >= 5,
-    IF(MA10 > SYS_MA55, 35, 0) + IF(MA10 > REF(MA10, 1), 25, IF(MA10 >= REF(MA10, 1) * 0.9999, 10, 0)) + IF(SYS_MA55 > REF(SYS_MA55, 1), 20, 0) + IF(C > MA10, 20, 0),
-    IF(D_M10 > D_M55, 35, 0) + IF(D_M10 > REF(D_M10, 1), 25, IF(D_M10 >= REF(D_M10, 1) * 0.9999, 10, 0)) + IF(D_M55 > REF(D_M55, 1), 20, 0) + IF(D_C > D_M10, 20, 0)
+    IF(MA10 > SYS_MA50, 35, 0) + IF(MA10 > REF(MA10, 1), 25, IF(MA10 >= REF(MA10, 1) * 0.9999, 10, 0)) + IF(SYS_MA50 > REF(SYS_MA50, 1), 20, 0) + IF(C > MA10, 20, 0),
+    IF(D_M10 > D_M50, 35, 0) + IF(D_M10 > REF(D_M10, 1), 25, IF(D_M10 >= REF(D_M10, 1) * 0.9999, 10, 0)) + IF(D_M50 > REF(D_M50, 1), 20, 0) + IF(D_C > D_M10, 20, 0)
 );
 MULTI_RESO_OK := TREND_DAY >= 55;
 
@@ -257,7 +257,7 @@ DRAWICON(HOLD_ST AND SCALPEL, L - P_GAP, 25);
 DRAWTEXT(TRY_BUY AND NOT(PREV_HOLD), L - P_GAP * 1.5, '埋'), COLOR00FFFF;
 
 MA10_LINE: MA10, COLOR0000FF, LINETHICK2;
-MA55_LINE: SYS_MA55, COLOR00FF00, LINETHICK2;
+MA50_LINE: SYS_MA50, COLOR00FF00, LINETHICK2;  {标签及变量名同步调整}
 D_STOP   : D_STOP_VAL, COLOR00CCFF, DOTLINE;
 
 { 4. 面板 (全透明无遮挡版) }
