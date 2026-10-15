@@ -1,39 +1,39 @@
 {==================================================================
-                          SCALPEL AMBUSH
+                    SCALPEL AMBUSH (MA20 & MA60 适配版)
 ==================================================================}
 
 {==================== 一、参数与市场效率 (ER) ====================}
-N_TRK         := 15;         {突破观察周期}
-ATR_X         := 1.06;       {普通趋势ATR止损}
-ATR_XS        := 1.48;       {强趋势ATR止损}
-V_DYS         := 15;         {量能均线周期}
-SHR_R         := 0.85;       {缩量阈值}
-BB_F          := 2.0;        {布林倍数}
-HOLD_MAX      := 240;        {最长持仓周期}
-M_PER         := 10;         {生命线周期 (MA10)}
-EPS           := 0.0001;     {统一除零保护极小量}
-MA10_TOL      := 0.985;      {MA10容忍系数(突破/衰竭)}
-CORE_TOL      := 0.982;      {核心条件MA10容忍系数}
-STRONG_GAIN_PCT := 20;       {MAX_GAIN强势阈值}
-TIGHT_STOP_MULT := 0.68;     {紧止损ATR系数}
-SZ_SC_MID     := 0.90;       {SZ_SC中位阈值}
-SZ_STD_N      := 80;         {暗流标准化窗口}
-WARM_N        := 80;         {预热K线数}
-TRD_MIN       := 240;        {日内交易分钟数}
-VP_MIN        := 30;         {量能外推最小已开盘分钟数}
-K_WICK_W      := 0.1;        {影线渲染宽度}
-K_BODY_W      := 2;          {实体渲染宽度}
+N_TRK      := 15;     {突破观察周期}
+ATR_X      := 1.06;   {普通趋势ATR止损}
+ATR_XS     := 1.48;   {强趋势ATR止损}
+V_DYS      := 15;     {量能均线周期}
+SHR_R      := 0.85;   {缩量阈值}
+BB_F       := 2.0;    {布林倍数}
+HOLD_MAX   := 240;    {最长持仓周期}
+M_PER      := 20;     {生命线周期 (原MA50现改为MA20)}
+EPS        := 0.0001; {统一除零保护极小量}
+MA20_TOL   := 0.985;  {MA20容忍系数(突破/衰竭)}
+CORE_TOL   := 0.982;  {核心条件MA20容忍系数}
+STRONG_GAIN_PCT := 20;     {MAX_GAIN强势阈值}
+TIGHT_STOP_MULT := 0.68;   {紧止损ATR系数}
+SZ_SC_MID  := 0.90;   {SZ_SC中位阈值}
+SZ_STD_N   := 80;     {暗流标准化窗口}
+WARM_N     := 60;     {预热K线数}
+TRD_MIN    := 240;    {日内交易分钟数}
+VP_MIN     := 30;     {量能外推最小已开盘分钟数}
+K_WICK_W   := 0.1;    {影线渲染宽度}
+K_BODY_W   := 2;      {实体渲染宽度}
 
-PREV_C    := REF(C, 1);
-TR_BASE   := MAX(MAX(H - L, ABS(H - PREV_C)), ABS(L - PREV_C));
+PREV_C     := REF(C, 1);
+TR_BASE    := MAX(MAX(H - L, ABS(H - PREV_C)), ABS(L - PREV_C));
 
-NET_CHG   := ABS(C - REF(C, 10));
-PATH_SUM  := SUM(ABS(C - PREV_C), 10);
-ER        := NET_CHG / (PATH_SUM + EPS);
-W_ER      := EMA(ER, 5);
+NET_CHG    := ABS(C - REF(C, 10));
+PATH_SUM   := SUM(ABS(C - PREV_C), 10);
+ER         := NET_CHG / (PATH_SUM + EPS);
+W_ER       := EMA(ER, 5);
 
-WARM_OK   := BARSCOUNT(C) > WARM_N;
-IS_INTRA  := PERIOD < 5;         {请按所用软件的PERIOD编码核对}
+WARM_OK    := BARSCOUNT(C) > WARM_N;
+IS_INTRA   := PERIOD < 5;       {请按所用软件的PERIOD编码核对}
 
 {==================== 二、自适应 ATR & 趋势生命线 ====================}
 ATR_FAST := MA(TR_BASE, 12);
@@ -41,22 +41,22 @@ ATR_MID  := MA(TR_BASE, 24);
 ATR_SLOW := MA(TR_BASE, 40);
 ATR_VAL  := W_ER * ATR_FAST + (1 - W_ER) * (0.6 * ATR_MID + 0.4 * ATR_SLOW);
 
-MA10     := EMA(C, M_PER);
-SYS_MA50 := EMA(C, 50);        {MA55改为MA50}
+MA20     := EMA(C, M_PER);
+SYS_MA60 := EMA(C, 60);      {原MA200改为MA60}
 
-SLP_10   := (MA10 - REF(MA10, 5)) / 5 / (MA10 + EPS);
-TREND_ST := SLP_10 > 0.00035;
-STK_OK   := C > MA10 * MA10_TOL;
-SLF_TR_UP := SYS_MA50 >= REF(SYS_MA50, 1) OR C > SYS_MA50;
+SLP_20   := (MA20 - REF(MA20, 5)) / 5 / (MA20 + EPS);
+TREND_ST := SLP_20 > 0.00025; {恢复至接近短线周期的斜率阈值}
+STK_OK   := C > MA20 * MA20_TOL;
+SLF_TR_UP := SYS_MA60 >= REF(SYS_MA60, 1) OR C > SYS_MA60;
 
 {==================== 三、跨周期趋势计算 ====================}
-D_C       := C#DAY;
-D_M10     := EMA(C, 10)#DAY;
-D_M50     := EMA(C, 50)#DAY;     {D_M55改为D_M50}
+D_C      := C#DAY;
+D_M20    := EMA(C, 20)#DAY;
+D_M60    := EMA(C, 60)#DAY;
 
 TREND_DAY := IF(PERIOD >= 5,
-    IF(MA10 > SYS_MA50, 35, 0) + IF(MA10 > REF(MA10, 1), 25, IF(MA10 >= REF(MA10, 1) * 0.9999, 10, 0)) + IF(SYS_MA50 > REF(SYS_MA50, 1), 20, 0) + IF(C > MA10, 20, 0),
-    IF(D_M10 > D_M50, 35, 0) + IF(D_M10 > REF(D_M10, 1), 25, IF(D_M10 >= REF(D_M10, 1) * 0.9999, 10, 0)) + IF(D_M50 > REF(D_M50, 1), 20, 0) + IF(D_C > D_M10, 20, 0)
+    IF(MA20 > SYS_MA60, 35, 0) + IF(MA20 > REF(MA20, 1), 25, IF(MA20 >= REF(MA20, 1) * 0.9999, 10, 0)) + IF(SYS_MA60 > REF(SYS_MA60, 1), 20, 0) + IF(C > MA20, 20, 0),
+    IF(D_M20 > D_M60, 35, 0) + IF(D_M20 > REF(D_M20, 1), 25, IF(D_M20 >= REF(D_M20, 1) * 0.9999, 10, 0)) + IF(D_M60 > REF(D_M60, 1), 20, 0) + IF(D_C > D_M20, 20, 0)
 );
 MULTI_RESO_OK := TREND_DAY >= 55;
 
@@ -86,9 +86,12 @@ V_MA_SAFE := MAX(V_MA, V_PRED * 0.15);
 V_SHRK    := V_PRED < V_MA_SAFE * SHR_R;
 V_MA5     := MA(V_PRED, 5);
 
-{==================== 五、暗流引擎 & 资金动量 (优化开盘即算) ====================}
+{==================== 五、暗流引擎 & 资金动量 (进阶优化版) ====================}
 VOL_RATIO := V_PRED / (V_MA_SAFE + EPS);
-SZ_DIR    := IF(C >= PREV_C, VOL_RATIO, -VOL_RATIO * 0.85);
+
+C_BIAS_MA20 := (C - MA20) / (MA20 + EPS);
+SZ_DOWN_COEF := IF(C_BIAS_MA20 > 0.01, 0.65, 0.85); 
+SZ_DIR    := IF(C >= PREV_C, VOL_RATIO, -VOL_RATIO * SZ_DOWN_COEF);
 
 SZ_OSC_F := EMA(SZ_DIR, 5) - EMA(SZ_DIR, 15);
 SZ_OSC_S := EMA(SZ_DIR, 15) - EMA(SZ_DIR, 45);
@@ -115,17 +118,18 @@ IN_DIR   := ((C - L) - (H - C)) / K_RNG;
 RL_DIR   := IF(ABS(IN_DIR) < 0.01, IF(C > PREV_C, 0.6, IF(C < PREV_C, -0.6, 0)), IN_DIR);
 DARK_FLOW:= EMA(RL_DIR * (0.65 + 0.35 * EX_CAP), 3);
 
-{ --- 双线超前导数与 TMC 镜像对齐 --- }
-D1_RAW      := SZ - REF(SZ, 1);
-D2_ACC      := D1_RAW - REF(D1_RAW, 1);
-LEAD_RAW    := (D1_RAW + D2_ACC * 0.618) * 2.95;
+TIME_DAMP := IF(IS_INTRA AND FROMOPEN < 60, FROMOPEN / 60, 1.0); 
+
+D1_RAW     := (SZ - REF(SZ, 1)) * TIME_DAMP;
+D2_ACC     := D1_RAW - REF(D1_RAW, 1);
+LEAD_RAW   := (D1_RAW + D2_ACC * 0.618) * 2.95;
 LEAD_FACTOR := LEAD_RAW * 0.85 + EMA(LEAD_RAW, 1) * 0.15;
 SZ_MA_VAL   := EMA(SZ + LEAD_FACTOR * 1.25, 2);
 
 TMC_BASE_F  := EMA(SZ, 7);
 TMC_BASE_S  := EMA(SZ, 25);
 TMC_BASE    := W_ER * TMC_BASE_F + (1 - W_ER) * TMC_BASE_S;
-TMC_D1      := TMC_BASE - REF(TMC_BASE, 1);
+TMC_D1      := (TMC_BASE - REF(TMC_BASE, 1)) * TIME_DAMP;
 TMC_D2      := TMC_D1 - REF(TMC_D1, 1);
 TMC_LEAD_RAW:= (TMC_D1 + TMC_D2 * 0.5) * 2.35;
 TMC_LEAD_FAC:= TMC_LEAD_RAW * 0.82 + EMA(TMC_LEAD_RAW, 2) * 0.18;
@@ -133,7 +137,8 @@ TMC_OBSERVE := EMA(TMC_BASE + TMC_LEAD_FAC, 2);
 
 SZ_CROSS_DN := CROSS(TMC_OBSERVE, SZ_MA_VAL);
 
-EXPL_TH_SUB   := 1.85 - W_ER * 0.60;
+ACC_BOOST     := MAX(0, D2_ACC);
+EXPL_TH_SUB   := 1.85 - W_ER * 0.60 - MIN(0.25, ACC_BOOST * 0.5); 
 IS_EXPL_SUB   := V_PRED > V_MA_SAFE * EXPL_TH_SUB;
 CF_TREND_OK   := SZ_MA_VAL > TMC_OBSERVE;
 SZ_STD20      := STD(SZ, 20);
@@ -156,9 +161,9 @@ LOW_VOL     := V_PRED < V_MA5 * SHR_R OR V_PRED < V_MA_SAFE * 0.80;
 HHV3 := HHV(H, 3);
 LLV3 := LLV(L, 3);
 RAW_EXHAUSTION := ((HHV3 - LLV3) / (LLV3 + EPS) * 100 < 3.8 OR BODY_SHRINK)
-                AND LOW_VOL AND C >= MA10 * MA10_TOL AND C <= MA10 * 1.025
+                AND LOW_VOL AND C >= MA20 * MA20_TOL AND C <= MA20 * 1.025
                 AND (C - LLV60) / (LLV60 + EPS) * 100 < 45
-                AND (SLP_10 > -0.0001 OR C > MA10);
+                AND (SLP_20 > -0.0001 OR C > MA20);
 
 EXH_CNT5       := COUNT(RAW_EXHAUSTION, 5);
 TRY_EXHAUSTION := RAW_EXHAUSTION AND EXH_CNT5 = 1;
@@ -167,15 +172,15 @@ DONCHIAN_HIGH := REF(HHV(H, N_TRK), 1);
 BREAK_POWER   := (C - DONCHIAN_HIGH) / (ATR_VAL + EPS) > 0.35;
 RAW_BUY       := CROSS(C, DONCHIAN_HIGH) AND BREAK_POWER AND STK_OK;
 
-KC_UP    := MA10 + 1.45 * ATR_VAL;
-BB_BREAK := C > MA10 + BB_F * STD(C, M_PER) AND V_PRED > REF(VOL, 1) * 0.7;
+KC_UP    := MA20 + 1.45 * ATR_VAL;
+BB_BREAK := C > MA20 + BB_F * STD(C, M_PER) AND V_PRED > REF(VOL, 1) * 0.7;
 GAP_SZ   := (L - REF(H, 1)) / (REF(H, 1) + EPS) * 100;
 MAIN_GAP := GAP_SZ > 0.5 AND C > O AND V_PRED > V_MA5;
 
 BUY_T     := RAW_BUY OR CROSS(C, KC_UP) OR BB_BREAK OR MAIN_GAP;
 OPEN_SAFE := FROMOPEN > 40 OR NOT(ISLASTBAR);
 
-CORE_COND := BUY_T AND C > MA10 * CORE_TOL AND SLF_TR_UP;
+CORE_COND := BUY_T AND C > MA20 * CORE_TOL AND SLF_TR_UP;
 FLT_PASS  := SCALPEL OR MAIN_GAP OR SZ_STR OR (C > HH20 * 0.97 AND VOL_RATIO > 1.0) OR (DARK_FLOW > 0.08) OR CF_FLY_SIGNAL;
 
 FINAL_BUY := CORE_COND AND FLT_PASS AND MULTI_RESO_OK AND OPEN_SAFE AND WARM_OK;
@@ -203,7 +208,7 @@ TIGHT_LOCK := DYN_X <= TIGHT_STOP_MULT;
 RAW_TRAIL    := HH_C_HOLD - DYN_X * ATR_VAL;
 STOP_RATCHET := HHV(RAW_TRAIL, HOLD_LEN);
 
-CRASH_EX := C < STOP_RATCHET OR CROSS(MA10, C) OR C < MA10 * IF(ADX_STR, 0.925, 0.945) OR (B_CNT > HOLD_MAX);
+CRASH_EX := C < STOP_RATCHET OR CROSS(MA20, C) OR C < MA20 * IF(ADX_STR, 0.925, 0.945) OR (B_CNT > HOLD_MAX);
 LAST_CRASH := IF(SUM(CRASH_EX, 0) > 0, BARSLAST(CRASH_EX), 9999);
 HOLD_ST    := HAS_TRIGGER AND LAST_CRASH > B_CNT AND B_CNT < HOLD_MAX;
 D_STOP_VAL := IF(HOLD_ST, STOP_RATCHET, DRAWNULL);
@@ -218,8 +223,8 @@ P_GAP     := MAX((H - L) * 0.03, C * 0.0005);
 BUY_ANY   := SIG_STR OR SIG_NOR;
 PREV_HOLD := REF(HOLD_ST, 1);
 
-SPRING_UP := IS_SPRING AND C >= MA10;
-SPRING_DN := IS_SPRING AND C < MA10;
+SPRING_UP := IS_SPRING AND C >= MA20;
+SPRING_DN := IS_SPRING AND C < MA20;
 
 AUTUMN_UP := IS_AUTUMN AND C >= O;
 AUTUMN_DN := IS_AUTUMN AND C < O;
@@ -256,8 +261,8 @@ DRAWICON(SIG_NOR AND NOT(PREV_HOLD), L - P_GAP, 7);
 DRAWICON(HOLD_ST AND SCALPEL, L - P_GAP, 25);
 DRAWTEXT(TRY_BUY AND NOT(PREV_HOLD), L - P_GAP * 1.5, '埋'), COLOR00FFFF;
 
-MA10_LINE: MA10, COLOR0000FF, LINETHICK2;
-MA50_LINE: SYS_MA50, COLOR00FF00, LINETHICK2;  {标签及变量名同步调整}
+MA20_LINE: MA20, COLOR0000FF, LINETHICK2;
+MA60_LINE: SYS_MA60, COLOR00FF00, LINETHICK2;  {标签及变量名已变更为MA60}
 D_STOP   : D_STOP_VAL, COLOR00CCFF, DOTLINE;
 
 { 4. 面板 (全透明无遮挡版) }
