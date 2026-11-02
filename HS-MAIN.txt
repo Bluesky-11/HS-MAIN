@@ -1,37 +1,37 @@
 {==================================================================
-                      天道围猎·四象势能主图
+                          天道围猎·四象势能主图
 ==================================================================}
 
 {--- 一、周期判定 ---}
-DAY_PRD     := 3;        { 日线对应的 PERIOD 值（仅 AUTO_PRD=0 时使用）}
-MIN_MAX     := 4;        { 分钟线 PERIOD 上限（含）（仅 AUTO_PRD=0 时使用）}
-MULTI_MIN   := 1;        { 1=把多分钟周期(PERIOD=8)按分钟线处理（仅 AUTO_PRD=0 时使用）}
-AUTO_PRD    := 1;        { 1=按数据特征自动识别分钟/日线(推荐), 0=用上面的 PERIOD 数值映射 }
+DAY_PRD     := 3;         { 日线对应的 PERIOD 值（仅 AUTO_PRD=0 时使用）}
+MIN_MAX     := 4;         { 分钟线 PERIOD 上限（含）（仅 AUTO_PRD=0 时使用）}
+MULTI_MIN   := 1;         { 1=把多分钟周期(PERIOD=8)按分钟线处理（仅 AUTO_PRD=0 时使用）}
+AUTO_PRD    := 1;         { 1=按数据特征自动识别分钟/日线(推荐), 0=用上面的 PERIOD 数值映射 }
 
-INTRA_AUTO  := CONST(COUNT(DATE = REF(DATE, 1), 20) > 0);                 { 同一天有多根K线 = 分钟线 }
+INTRA_AUTO  := CONST(COUNT(DATE = REF(DATE, 1), 20) > 0);                     { 同一天有多根K线 = 分钟线 }
 DAY_AUTO    := NOT(INTRA_AUTO) AND CONST(COUNT(MONTH <> REF(MONTH, 1), 40)) <= 5;  { 40根内换月<=5次 = 日线级别 }
 IS_DAY_BAR  := IF(AUTO_PRD = 1, DAY_AUTO, PERIOD = DAY_PRD);
 IS_MIN_BAR  := IF(AUTO_PRD = 1, INTRA_AUTO, (PERIOD <= MIN_MAX AND PERIOD <> DAY_PRD) OR (MULTI_MIN = 1 AND PERIOD = 8));
 IS_HTF      := NOT(IS_DAY_BAR) AND NOT(IS_MIN_BAR);
 
 {--- 二、开关参数 ---}
-USE_AMT     := 1;        { 1=量能用成交额, 0=用成交量 }
-GATE_ON     := 1;        { 1=启用多周期趋势门控 }
-CF_SQZ      := 0;        { 1=火花确认也接受缩量挤压源 }
-CF_GATE     := 1;        { 1=火花确认也受门控约束 }
-D_LAG       := 1;        { 日线趋势引用滞后(防未来函数)，勿设为0 }
-STATE_FLOW  := 0;        { 1=资金动量>0 也算资金流入 }
-DC_SRC      := 1;        { 1=死叉用成交额引擎, 0=用量比引擎 }
-CAP_EVENT   := 1;        { 1=资金得分穿越才触发, 0=持续高于即触发 }
-RATCHET_FULL := 1;       { 1=棘轮止损全程取高 }
-PANEL_ON    := 1;        { 1=显示战术面板, 0=隐藏 }
-EXIT_MARK   := 1;        { 1=持仓结束当根标注「离」(仅显示) }
-DBG_PRD     := 1;        { 1=面板显示周期诊断，核对后可设0 }
-CURVE_ON    := 1;        { 1=盘中量能按日内分布曲线预测, 0=按时间线性外推(旧版) }
-TOP_BLOCK   := 1;        { 1=放量滞涨(TOP_EXHAUST)当根不给买入信号 }
-TRY_GATE    := 0;        { 1=埋伏信号也受门控约束, 0=不受(保持旧版行为) }
+USE_AMT     := 1;         { 1=量能用成交额, 0=用成交量 }
+GATE_ON     := 1;         { 1=启用多周期趋势门控 }
+CF_SQZ      := 0;         { 1=火花确认也接受缩量挤压源 }
+CF_GATE     := 1;         { 1=火花确认也受门控约束 }
+D_LAG       := 1;         { 日线趋势引用滞后(防未来函数)，勿设为0 }
+STATE_FLOW  := 0;         { 1=资金动量>0 也算资金流入 }
+DC_SRC      := 1;         { 1=死叉用成交额引擎, 0=用量比引擎 }
+CAP_EVENT   := 1;         { 1=资金得分穿越才触发, 0=持续高于即触发 }
+RATCHET_FULL := 1;        { 1=棘轮止损全程取高 }
+PANEL_ON    := 1;         { 1=显示战术面板, 0=隐藏 }
+EXIT_MARK   := 1;         { 1=持仓结束当根标注「离」(仅显示) }
+DBG_PRD     := 1;         { 1=面板显示周期诊断，核对后可设0 }
+CURVE_ON    := 1;         { 1=盘中量能按日内分布曲线预测, 0=按时间线性外推(旧版) }
+TOP_BLOCK   := 1;         { 1=放量滞涨(TOP_EXHAUST)当根不给买入信号 }
+TRY_GATE    := 1;         { 1=埋伏信号也受门控约束, 0=不受(保持旧版行为) }
 
-{--- 三、策略参数 ---}
+{--- 三、策略参数 (已适配MA5 & MA45核心架构) ---}
 N_TRK       := 10;
 ATR_X       := 1.06;
 ATR_XS      := 1.48;
@@ -39,10 +39,10 @@ V_DYS       := IF(IS_MIN_BAR, 5, 15);
 V_SHORT     := 5;
 SHR_R       := 0.85;
 BB_F        := 2.0;
-BB_N        := 5;        { 配合MA5同步 }
+BB_N        := 5;         { 配合MA5同步 }
 HOLD_MAX    := 240;
-M_PER       := 5;        { 快线周期：EMA5 }
-M_PER2      := 45;       { 慢线周期：EMA45 }
+M_PER       := 5;         { 快线周期：EMA5 }
+M_PER2      := 45;        { 慢线周期：EMA45 }
 EPS         := 0.0001;
 MA_TOL      := 0.985;
 CORE_TOL    := 0.982;
@@ -55,7 +55,7 @@ SZ_SC_HI    := 1.30;
 SZ_OFF      := 1.9;
 SZ_DIV      := 2.7;
 SZ_STD_N    := IF(IS_MIN_BAR, 15, 80);
-WARM_N      := MAX(SZ_STD_N + 20, 60);   { 预热期随 STD 窗口联动: 日线100, 分钟60 }
+WARM_N      := MAX(SZ_STD_N + 20, 60);    { 预热期随 STD 窗口联动: 日线100, 分钟60 }
 OPEN_BLOCK  := 40;
 
 {引擎窗口}
@@ -108,7 +108,7 @@ WEIGHT      := 3.55; SMOOTH_K := 6.8; DARK_TH := 0.05;
 CZB_N       := 6;
 OSC_F1      := 6; OSC_F2 := 14; OSC_S1 := 12; OSC_S2 := 28; OSC_OUT := 6;
 LEAD_DAMP   := 0.9; LEAD_D2W := 0.5; LEAD_RAW_W := 0.70; LEAD_SM_LEN := 3; LEAD_MIX := 1.15;
-SZ_MA_LEN   := 6; SZ_SCALE := 0.69;
+SZ_MA_LEN   := 5; SZ_SCALE := 0.69;
 TMC_GAIN    := 2.35; TMC_DAMP := 0.85; TMC_D2W := 0.4; TMC_RAW_W := 0.70;
 TMC_LD_SM_LEN := 5; TMC_OUT_LEN := 6;
 MAG_FLOOR   := 0.25; MAG_LO := 0.5; MAG_HI := 2.0;
@@ -130,13 +130,12 @@ BAR_FO  := IF(IS_MIN_BAR, MAX(IF(BAR_HM <= 690, BAR_HM - 570, BAR_HM - 660), 0),
 IN_SESS := FROMOPEN > 0 AND FROMOPEN < TRD_MIN;
 IS_PRED := ISLASTBAR AND IN_SESS AND IS_DAY_BAR;
 FO_EFF  := MIN(MAX(FROMOPEN, VP_MIN), TRD_MIN);
-{ 日内累计成交量占比曲线(经验值,可按个人统计校准): 30分20% 60分31% 120分48% 180分66% 210分78% 240分100% }
 FRAC_D  := IF(FO_EFF <= 30, 0.20 * FO_EFF / 30,
-           IF(FO_EFF <= 60, 0.20 + 0.11 * (FO_EFF - 30) / 30,
-           IF(FO_EFF <= 120, 0.31 + 0.17 * (FO_EFF - 60) / 60,
-           IF(FO_EFF <= 180, 0.48 + 0.18 * (FO_EFF - 120) / 60,
-           IF(FO_EFF <= 210, 0.66 + 0.12 * (FO_EFF - 180) / 30,
-                             0.78 + 0.22 * (FO_EFF - 210) / 30)))));
+            IF(FO_EFF <= 60, 0.20 + 0.11 * (FO_EFF - 30) / 30,
+            IF(FO_EFF <= 120, 0.31 + 0.17 * (FO_EFF - 60) / 60,
+            IF(FO_EFF <= 180, 0.48 + 0.18 * (FO_EFF - 120) / 60,
+            IF(FO_EFF <= 210, 0.66 + 0.12 * (FO_EFF - 180) / 30,
+                              0.78 + 0.22 * (FO_EFF - 210) / 30)))));
 PRED_F  := IF(IS_PRED, IF(CURVE_ON = 1, 1 / FRAC_D, TRD_MIN / FO_EFF), 1);
 V_PRED  := IF(USE_AMT = 1, AMOUNT, VOL) * PRED_F;
 V_PRED_P1 := IF(N_BAR > 1, REF(V_PRED, 1), V_PRED);
@@ -166,7 +165,7 @@ ATR_MID  := MA(TR_BASE, ATR_N2);
 ATR_SLOW := MA(TR_BASE, ATR_N3);
 ATR_VAL  := W_ER * ATR_FAST + (1 - W_ER) * (ATR_MIDW * ATR_MID + (1 - ATR_MIDW) * ATR_SLOW);
 
-{MA5/MA45 指数均线}
+{MA5 / MA45 指数均线锚定}
 MA5      := EMA(C, M_PER);
 MA45     := EMA(C, M_PER2);
 MA5_P1   := IF(N_BAR > 1, REF(MA5, 1), MA5);
@@ -337,7 +336,7 @@ TMC_LEAD_FAC := TMC_LEAD_RAW * TMC_RAW_W + TMC_LEAD_SM * (1 - TMC_RAW_W);
 TMC_OBSERVE  := EMA(TMC_BASE + TMC_LEAD_FAC, TMC_OUT_LEN);
 SZ_CROSS_DN  := CROSS(TMC_OBSERVE, SZ_MA_VAL);
 
-VOL_WEAK    := AMT_PRED_RAW < AMT_MA_SAFE * VOLWEAK_R;
+VOL_WEAK   := AMT_PRED_RAW < AMT_MA_SAFE * VOLWEAK_R;
 
 {==================== 六、买入信号与衰竭埋伏 ====================}
 LLV_BASE  := LLV(L, BASE_N);
@@ -371,15 +370,15 @@ RAW_EXHAUSTION := ((HHV3 - LLV3) / (LLV3 + EPS) * 100 < EXH_RNG OR BODY_SHRINK)
 EXH_CNT        := COUNT(RAW_EXHAUSTION, EXH_WIN);
 TRY_EXHAUSTION := RAW_EXHAUSTION AND EXH_CNT = 1;
 
-{--- 多头衰竭（放量滞涨/高位消耗）V2: 修复阴线恒真漏洞 ---}
-UP_SHD       := H - MAX(C, O);                                  { 上影线长度 }
-V_SURGE_TOP  := V_PRED > V_MAS_P1 * TOP_VOL_X;                  { 相对前5根均量放量, 不含当根 }
-P_STAGNANT   := PCT_CHG < TOP_CHG AND PCT_CHG > TOP_DROP
-                AND UP_SHD > ABS(C - O)                         { 上影线长于实体 }
-                AND UP_SHD / (H - L + EPS) > TOP_SHADOW;        { 上影线占比足够 }
-HI_POS_60    := (C - LLV_BASE) / (HHV(H, BASE_N) - LLV_BASE + EPS);
-IN_HIGH_POS  := C > MA(C, 20) AND HI_POS_60 > TOP_POS;          { 站上20日线且处于60日区间高位 }
-TOP_EXHAUST  := V_SURGE_TOP AND P_STAGNANT AND IN_HIGH_POS;
+{--- 多头衰竭（放量滞涨/高位消耗）V2 ---}
+UP_SHD      := H - MAX(C, O);                                    { 上影线长度 }
+V_SURGE_TOP := V_PRED > V_MAS_P1 * TOP_VOL_X;                { 相对前5根均量放量, 不含当根 }
+P_STAGNANT  := PCT_CHG < TOP_CHG AND PCT_CHG > TOP_DROP
+                AND UP_SHD > ABS(C - O)                     { 上影线长于实体 }
+                AND UP_SHD / (H - L + EPS) > TOP_SHADOW;       { 上影线占比足够 }
+HI_POS_60   := (C - LLV_BASE) / (HHV(H, BASE_N) - LLV_BASE + EPS);
+IN_HIGH_POS := C > MA(C, 20) AND HI_POS_60 > TOP_POS;          { 站上20日线且处于60日区间高位 }
+TOP_EXHAUST := V_SURGE_TOP AND P_STAGNANT AND IN_HIGH_POS;
 
 DONCHIAN_HIGH := REF(HHV(H, N_TRK), 1);
 BREAK_POWER   := (C - DONCHIAN_HIGH) / (ATR_VAL + EPS) > BRK_PWR;
@@ -393,7 +392,7 @@ MAIN_GAP := GAP_SZ > GAP_PCT AND C > O AND V_PRED > V_MAS;
 
 BUY_T    := RAW_BUY OR CROSS(C, KC_UP) OR BB_BREAK OR MAIN_GAP;
 
-{--- 开盘屏蔽: 改用逐根K线时间, 历史K线与实时判定一致 ---}
+{--- 开盘屏蔽 ---}
 OPEN_BLK  := IS_MIN_BAR AND BAR_FO > 0 AND BAR_FO <= OPEN_BLOCK;
 OPEN_SAFE := NOT(OPEN_BLK);
 GATE_OK   := IF(GATE_ON = 1, MULTI_RESO_OK AND OPEN_SAFE, 1);
@@ -445,7 +444,6 @@ HOLD_ST    := HAS_BUY AND (LAST_CRASH > B_CNT OR B_CNT = 0);
 PREV_HOLD  := IF(N_BAR > 1, REF(HOLD_ST, 1), 0);
 EXIT_BAR   := PREV_HOLD AND NOT(HOLD_ST);
 
-{ 埋伏试错: 补 WARM_OK; TRY_GATE=1 时同样受门控约束 }
 TRY_BUY    := TRY_EXHAUSTION AND NOT(HOLD_ST) AND WARM_OK AND IF(TRY_GATE = 1, GATE_OK, 1);
 
 IS_SUMMER := HOLD_ST AND (MAX_GAIN > STRONG_GAIN_PCT
@@ -500,7 +498,7 @@ STICKLINE(AUTUMN_DN, C, O, K_BODY_W, 0), COLOR444444;
 STICKLINE(IS_WINTER, H, L, K_WICK_W, 0), COLORFF00FF;
 STICKLINE(IS_WINTER, C, O, K_BODY_W, 1), COLORFF00FF;
 STICKLINE(IS_SUMMER, H, L, K_WICK_W, 0), COLOR00AAFF;
-STICKLINE(IS_SUMMER, C, O, K_BODY_W, 0), COLOR00AAFF;     { V2 补: 夏季K线实体 }
+STICKLINE(IS_SUMMER, C, O, K_BODY_W, 0), COLOR00AAFF;
 STICKLINE(SPRING_UP, H, L, K_WICK_W, 0), COLOR00FFFF;
 STICKLINE(SPRING_UP, C, O, K_BODY_W, 0), COLOR00FFFF;
 STICKLINE(SPRING_DN, H, L, K_WICK_W, 0), COLOR0000FF;
@@ -537,10 +535,10 @@ DRAWICON(SIG_NOR AND NOT(PREV_HOLD), L - P_GAP, 7);
 DRAWICON(HOLD_ST AND SCALPEL, L - P_GAP, 25);
 DRAWTEXT(TRY_BUY, L - P_GAP * 1.5, '埋'), COLOR00FFFF;
 
-{持仓结束标记（仅显示）}
+{持仓结束标记}
 DRAWTEXT(EXIT_MARK = 1 AND EXIT_BAR, H + P_GAP * 1.5, '离'), COLORFF0077;
 
-{主图均线及止损线: 直接引用变量, 与参数 M_PER/M_PER2 保持一致}
+{主图均线及止损线: MA5 与 MA45}
 MA5_LINE:  MA5, COLOR0000FF, LINETHICK2;
 MA45_LINE: MA45, COLOR00FFAA, LINETHICK2;
 D_STOP:    D_STOP_VAL, COLOR00CCFF, DOTLINE;
@@ -552,7 +550,7 @@ GATE_NOT_PASS := NOT(GATE_OK);
 GATE_WAIT_ST  := GATE_OK AND NOT(WARM_OK);
 GATE_OK_ST    := GATE_OK AND WARM_OK;
 
-{--- 周期诊断行 (DBG_PRD=1) ---}
+{--- 周期诊断行 ---}
 DRAWTEXT_FIX(IS_LAST AND DBG_PRD = 1, 0.01, 0.83, 0, '周期诊断 PERIOD='), COLORFFFFFF;
 DRAWNUMBER_FIX(IS_LAST AND DBG_PRD = 1, 0.15, 0.83, 0, PERIOD), COLORFFFF00;
 DRAWTEXT_FIX(IS_LAST AND DBG_PRD = 1 AND IS_DAY_BAR, 0.19, 0.83, 0, '识别:日线'), COLOR00FF00;
